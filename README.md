@@ -1,192 +1,163 @@
-Motor de Aventura de Texto - ADA/DNI
-Descripción
-Un motor de narrativa interactiva desarrollado en C++ que permite crear y recorrer historias ramificadas tipo "elige tu propia aventura". El proyecto sigue una arquitectura colaborativa donde ADA proporciona la lógica del motor y la estructura del grafo narrativo, mientras que DNI se encarga de la interfaz visual y la experiencia narrativa.
+# Motor de Narrativas con Grafo (C++ Narrative Engine)
 
-Características Principales
-Grafo narrativo DAG: Estructura de escenas conectadas sin ciclos
+Un motor modular y extensible para crear aventuras de texto basadas en grafos dirigidos acíclicos (DAG).  
+Permite diseñar historias ramificadas donde cada decisión del jugador conduce a otras escenas, rutas o finales.
 
-Sistema de decisiones: Elecciones múltiples que afectan el curso de la historia
+---
 
-Finales múltiples: 5 diferentes desenlaces dependiendo de las decisiones
+## Objetivo del Proyecto
 
-Validación automática: Detección de errores en la estructura del grafo
+Construir un motor narrativo mínimo pero funcional que:
 
-Interfaz interactiva: Navegación intuitiva con limpieza de pantalla y formato visual
+- Muestre escenas y opciones.
+- Capture la decisión del jugador.
+- Navegue un grafo narrativo sin ciclos.
+- Asegure estabilidad mediante validaciones.
+- Permita ampliar la historia sin modificar la lógica central.
 
-Extensible: Fácil de modificar y ampliar con nuevas escenas y rutas
+El motor corre en consola y está pensado como herramienta educativa.
 
-Estructura del Proyecto
-Componentes Principales
-SceneNode: Representa una escena individual con:
+---
 
-ID único
+# Arquitectura General
 
-Texto narrativo
+El proyecto se divide en dos componentes principales:
 
-Opciones de decisión (texto visible + ID destino)
+## 1. Motor Lógico (ADA)
 
-StoryGraph: Contenedor principal del grafo que:
+Responsable de:
 
-Almacena todos los nodos en un mapa
+- Implementar las clases `SceneNode` y `StoryGraph`.
+- Crear la función `BuildGraph()` y poblar el grafo.
+- Ejecutar el bucle principal del juego.
+- Validar entrada del usuario.
+- Garantizar navegación segura entre nodos.
 
-Proporciona métodos para acceder y validar la estructura
+## 2. Narrativa e Interfaz (DNI)
 
-Define el nodo inicial
+Responsable de:
 
-Funciones de Interfaz:
+- Escribir la historia: escenas, decisiones y finales.
+- Implementar `DisplayScene()` y `GetChoice()`.
+- Diseñar el formato de presentación en consola.
+- Proveer el contenido en un formato estándar para integración.
 
-DisplayScene(): Muestra la escena actual
+---
 
-GetChoice(): Captura la decisión del jugador
+# Estructuras de Datos
 
-ShowWelcomeScreen(): Pantalla de inicio
+## SceneNode
 
-ShowEndScreen(): Pantalla final
+Representa una escena. Incluye:
 
-Instalación y Ejecución
-Requisitos
-Compilador C++ (g++, clang, o MSVC)
+- `id`: identificador único.
+- `text`: narrativa principal.
+- `options`: lista de pares `(texto_opcion, id_destino)`.
 
-Terminal compatible (Windows/Linux/macOS)
+## StoryGraph
 
-Compilación
-bash
-# Con g++
-g++ -o aventura_demo grafo.cpp
+Implementado como:
 
-# Con clang
-clang++ -o aventura_demo grafo.cpp
+```
+std::map<std::string, SceneNode>
+```
 
-# En Windows con MinGW
-g++ -o aventura_demo.exe grafo.cpp
-Ejecución
-bash
-./aventura_demo      # Linux/macOS
-./aventura_demo.exe  # Windows
-Historia de Muestra
-El proyecto incluye una demostración narrativa ambientada en un bosque misterioso:
+Ventajas:
 
-Nodos Principales
-START: Claro del bosque (punto de inicio)
+- Acceso rápido por ID.
+- Estructura ordenada y clara.
+- Representación directa del grafo narrativo.
 
-BOSQUE_PROFUNDO: Cabaña solitaria
+## Grafo Dirigido Acíclico (DAG)
 
-ARROYO: Encuentro con figura misteriosa
+- Nodos: escenas.
+- Aristas: decisiones.
+- Nodos finales: escenas sin opciones.
 
-CABANA_INTERIOR: Mapa antiguo
+Evita ciclos y facilita la lectura estructural de la historia.
 
-ENCUENTRO_ERMITANO: Decisión crucial
+---
 
-Finales Disponibles
-FINAL_ESCAPE: Escape del bosque
+# Flujo del Programa
 
-FINAL_MAPA: Seguir el mapa a la aldea
+1. Se construye el grafo (`BuildGraph()`).
+2. Se establece un nodo inicial.
+3. En un ciclo:
+   - Se muestra la escena actual.
+   - Se leen opciones del jugador.
+   - Se valida la entrada.
+   - Se salta a la siguiente escena.
+4. El juego termina al llegar a un nodo sin opciones.
 
-FINAL_TESORO: Encontrar el amuleto
+---
 
-FINAL_ERMITANO: Aceptar ayuda del ermitaño
+# Formato Estándar para la Historia  
 
-FINAL_ALONE: Continuar solo
+Ejemplo de escena proporcionada por el DNI:
 
-Personalización
-Modificar la Historia Existente
-Edita la función BuildGraph() en el archivo grafo.cpp para:
+```
+ID del nodo: CUEVA_ENTRADA_01
 
-Cambiar textos narrativos
+Texto:
+"Estás frente a la entrada de una cueva oscura."
 
-Añadir nuevas opciones
+Opciones:
+1. Entrar con cautela -> CUEVA_DENTRO_02
+2. Rodear la zona -> BOSQUE_RAMA_03
+3. Regresar al campamento -> FINAL_RETIRADA
+```
 
-Crear nuevos nodos y conexiones
+Integración correspondiente en C++:
 
-Ejemplo de Creación de Nodo
-cpp
-SceneNode nuevo_nodo("MI_NODO",
-    "Texto narrativo de la escena.");
-nuevo_nodo.add_option("Texto de opción 1", "NODO_DESTINO_1");
-nuevo_nodo.add_option("Texto de opción 2", "NODO_DESTINO_2");
-story_graph.add_node(nuevo_nodo);
-Cargar desde Archivo (Extensión Futura)
-Puedes reemplazar BuildGraph() con un sistema que cargue la narrativa desde:
+```cpp
+graph["CUEVA_ENTRADA_01"] = {
+    "CUEVA_ENTRADA_01",
+    "Estás frente a la entrada de una cueva oscura.",
+    {
+        {"Entrar con cautela", "CUEVA_DENTRO_02"},
+        {"Rodear la zona", "BOSQUE_RAMA_03"},
+        {"Regresar al campamento", "FINAL_RETIRADA"}
+    }
+};
+```
 
-Archivos JSON
 
-Archivos de texto estructurados
 
-Bases de datos
+---
 
-Validación del Grafo
-El motor incluye validación automática que verifica:
+# Compilación y Ejecución
 
-Aristas válidas: Todas las conexiones apuntan a nodos existentes
+Compilar:
 
-Sin ciclos: Garantiza que el grafo sea un DAG (Directed Acyclic Graph)
+```
+g++ -std=c++17 -O2 main.cpp -o grafo.cpp
+```
 
-Colaboración ADA/DNI
-Responsabilidades de ADA
-✅ Lógica del motor de narrativa
+Ejecutar:
 
-✅ Estructura del grafo (SceneNode, StoryGraph)
+```
+./grafo.cpp
+```
 
-✅ Validación de integridad
+---
 
-✅ Contratos de interfaz
+# Cómo Expandir la Historia
 
-Responsabilidades de DNI
-Implementación de DisplayScene()
+1. El DNI escribe nuevas escenas siguiendo el formato estándar.
+2. El ADA las integra en `BuildGraph()`.
+3. Se prueba cada ruta para evitar:
+   - ciclos
+   - opciones con IDs inexistentes
+   - rutas inconclusas
 
-Implementación de GetChoice()
 
-Diseño de pantallas (welcome/end)
 
-Experiencia narrativa completa
+# Valor Educativo
 
-Posibles extensiones futuras
+Este motor sirve para practicar:
 
-Estructura de Archivos
-text
-aventura_engine/
-├── grafo.cpp          # Código fuente principal
-├── README.md          # Este archivo
-└── (futuros archivos)
-    ├── narrativa.json # Posible formato de carga
-    ├── editor.cpp     # Editor visual de escenas
-    └── tests/         # Pruebas unitarias
-Extensiones Futuras
-Sistema de inventario: Objetos que afectan decisiones
-
-Estadísticas del jugador: Salud, reputación, etc.
-
-Sistema de guardado: Continuar partidas
-
-Editor visual: Crear narrativas sin programar
-
-Exportación a JSON: Intercambio de historias
-
-Efectos de sonido: Inmersión auditiva
-
-Sistema de logros: Finales especiales
-
-Consejos para Narrativas
-Variedad de opciones: Mínimo 2, ideal 3-4 por escena
-
-Finales significativos: Cada decisión debe importar
-
-Coherencia temática: Mantener el tono de la historia
-
-Pistas sutiles: Información que guíe sin forzar
-
-Rejugabilidad: Diferentes rutas para explorar
-
-Solución de Problemas
-Error de compilación
-bash
-# Si falta una biblioteca
-g++ -std=c++11 -o aventura_demo grafo.cpp
-Nodo no encontrado durante ejecución
-Verifica que todos los IDs destino en add_option() existan en el grafo.
-
-Ciclos detectados
-Asegúrate de que ninguna secuencia de decisiones pueda regresar a un nodo anterior.
-
-Licencia
-Este proyecto es educativo y está disponible para modificación y distribución libre. Atribución recomendada.
+- Modelado de grafos en C++.
+- Arquitectura modular entre lógica y narrativa.
+- Validación y control de flujo textual.
+- Construcción incremental de software.
+- Prototipado narrativo estructurado.
